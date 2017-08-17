@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CSharp\Internal\Extensions.cs" Link="Extensions.cs" />
+    <Compile Include="..\..\CSharp\Internal\Generator.cs" Link="Generator.cs" />
+    <Compile Include="..\..\CSharp\Internal\Model.cs" Link="Model.cs" />
+    <Compile Include="..\..\CSharp\Internal\Parser.cs" Link="Parser.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SchemaExplorer" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ICSharpCode.NRefactory">
+      <HintPath>..\..\Common\ICSharpCode.NRefactory.dll</HintPath>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory.CSharp">
+      <HintPath>..\..\Common\ICSharpCode.NRefactory.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\Common\Mono.Cecil.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
