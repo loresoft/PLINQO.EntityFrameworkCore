@@ -2,7 +2,7 @@
 
 Entity Framework Core templates for CodeSmith Generator
 
-[![Build status](https://ci.appveyor.com/api/projects/status/3ms4lgjmuokutiv0?svg=true)](https://ci.appveyor.com/project/LoreSoft/plinqo-entityframework-dbcontext)
+[![Build status](https://ci.appveyor.com/api/projects/status/tb3407pyjrkvkb3n/branch/master?svg=true)](https://ci.appveyor.com/project/LoreSoft/plinqo-entityframeworkcore)
 
 ##Download
 
