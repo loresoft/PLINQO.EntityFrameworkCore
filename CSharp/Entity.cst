@@ -3,9 +3,10 @@
 <%@ Assembly Name="SchemaExplorer" %>
 <%@ Assembly Name="CodeSmith.CustomProperties" %>
 
-<%@ Assembly Name="Mono.Cecil" Path="..\Common" %>
-<%@ Assembly Name="ICSharpCode.NRefactory" Path="..\Common" %>
-<%@ Assembly Name="ICSharpCode.NRefactory.CSharp" Path="..\Common" %>
+<%@ Assembly Name="Microsoft.CodeAnalysis.CSharp" Path="..\Common\Tools\Microsoft.CodeAnalysis.CSharp\lib\netstandard1.3" %>
+<%@ Assembly Name="Microsoft.CodeAnalysis" Path="..\Common\Tools\Microsoft.CodeAnalysis.Common\lib\netstandard1.3" %>
+<%@ Assembly Name="System.Text.Encoding" %>
+<%@ Assembly Name="System.Threading.Tasks" %>
 
 <%@ Assembly Src="Internal\Model.cs" %>
 <%@ Assembly Src="Internal\Extensions.cs" %>
@@ -209,7 +210,7 @@ Generating Entities ...
         EntityContext context = generator.Generate(SourceDatabase);
         
         // update model from source files
-        //Synchronizer.UpdateFromSource(context, ContextDirectory, MappingDirectory);
+        Synchronizer.UpdateFromSource(context, ContextDirectory, MappingDirectory);
         
         CreateContextClass(context);
         CreateMappingClasses(context);

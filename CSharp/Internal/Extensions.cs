@@ -133,6 +133,10 @@ namespace SchemaMapper
             if (language == CodeLanguage.CSharp && _csharpTypeAlias.TryGetValue(type, out t))
                 return t;
 
+            // drop system from namespace
+            string[] parts = type.Split('.');
+            if (parts.Length == 2 && parts[0] == "System")
+                return parts[1];
 
             return type;
         }

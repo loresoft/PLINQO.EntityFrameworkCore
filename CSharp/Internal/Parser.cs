@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using ICSharpCode.NRefactory.CSharp;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SchemaMapper
 {
@@ -41,230 +41,239 @@ namespace SchemaMapper
         public ParsedRelationship()
         {
             ThisProperties = new List<string>();
-            JoinThisColumn = new List<string>();
-            JoinOtherColumn = new List<string>();
         }
 
         public string ThisPropertyName { get; set; }
         public List<string> ThisProperties { get; private set; }
 
         public string OtherPropertyName { get; set; }
-
-        public string JoinTable { get; set; }
-        public string JoinSchema { get; set; }
-        public List<string> JoinThisColumn { get; private set; }
-        public List<string> JoinOtherColumn { get; private set; }
     }
 
-    public class MappingVisitor : DepthFirstAstVisitor<object, object>
+    public class MappingVisitor : CSharpSyntaxWalker
     {
+        private ParsedProperty _currentProperty;
+        private ParsedRelationship _currentRelationship;
+
+
         public MappingVisitor()
         {
-            MappingBaseType = "EntityTypeConfiguration";
+            MappingBaseType = "IEntityTypeConfiguration";
         }
 
         public string MappingBaseType { get; set; }
+
         public ParsedEntity ParsedEntity { get; set; }
 
-        public override object VisitTypeDeclaration(TypeDeclaration typeDeclaration, object data)
-        {
-            var baseType = typeDeclaration.BaseTypes.OfType<MemberType>().FirstOrDefault();
-            if (baseType == null || baseType.MemberName != MappingBaseType)
-                return base.VisitTypeDeclaration(typeDeclaration, data);
 
-            var entity = baseType.TypeArguments.OfType<MemberType>().FirstOrDefault();
-            if (entity == null)
-                return base.VisitTypeDeclaration(typeDeclaration, data);
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
+        {
+            ParseClassNames(node);
+            base.VisitClassDeclaration(node);
+        }
+
+        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+
+            var methodName = ParseMethodName(node);
+
+            switch (methodName)
+            {
+                case "HasForeignKey":
+                    ParseForeignKey(node);
+                    break;
+                case "WithMany":
+                case "WithOne":
+                    ParseWithMany(node);
+                    break;
+                case "HasMany":
+                case "HasOne":
+                    ParseHasOne(node);
+                    break;
+                case "HasColumnName":
+                    ParseColumnName(node);
+                    break;
+                case "Property":
+                    ParseProperty(node);
+                    break;
+                case "ToTable":
+                    ParseTable(node);
+                    break;
+            }
+
+            base.VisitInvocationExpression(node);
+        }
+
+
+        private string ParseMethodName(InvocationExpressionSyntax node)
+        {
+            var memberAccess = node
+                .ChildNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .FirstOrDefault();
+
+            if (memberAccess == null)
+                return string.Empty;
+
+            var methodName = memberAccess
+                .ChildNodes()
+                .OfType<IdentifierNameSyntax>()
+                .Select(s => s.Identifier.ValueText)
+                .LastOrDefault();
+
+            return methodName ?? string.Empty;
+        }
+
+        private string ParseLambaExpression(InvocationExpressionSyntax node)
+        {
+            if (node == null)
+                return null;
+
+            var lambaExpression = node
+                .ArgumentList
+                .DescendantNodes()
+                .OfType<LambdaExpressionSyntax>()
+                .FirstOrDefault();
+
+            if (lambaExpression == null)
+                return null;
+
+            var simpleExpression = lambaExpression
+                .DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .FirstOrDefault();
+
+            if (simpleExpression == null)
+                return null;
+
+            var propertyName = simpleExpression
+                .DescendantNodes()
+                .OfType<IdentifierNameSyntax>()
+                .Select(s => s.Identifier.ValueText)
+                .LastOrDefault();
+
+            return propertyName;
+        }
+
+
+        private void ParseHasOne(InvocationExpressionSyntax node)
+        {
+            if (node == null || ParsedEntity == null || _currentRelationship == null)
+                return;
+
+            var propertyName = ParseLambaExpression(node);
+            _currentRelationship.ThisPropertyName = propertyName;
+        }
+
+        private void ParseWithMany(InvocationExpressionSyntax node)
+        {
+            if (node == null || ParsedEntity == null || _currentRelationship == null)
+                return;
+
+            var propertyName = ParseLambaExpression(node);
+            _currentRelationship.OtherPropertyName = propertyName;
+
+        }
+
+        private void ParseForeignKey(InvocationExpressionSyntax node)
+        {
+            if (node == null || ParsedEntity == null)
+                return;
+
+            var propertyName = ParseLambaExpression(node);
+
+            _currentRelationship = new ParsedRelationship();
+            ParsedEntity.Relationships.Add(_currentRelationship);
+
+            _currentRelationship.ThisProperties.Add(propertyName);
+        }
+
+        private void ParseProperty(InvocationExpressionSyntax node)
+        {
+            if (node == null || _currentProperty == null)
+                return;
+
+            var propertyName = ParseLambaExpression(node);
+
+            _currentProperty.PropertyName = propertyName;
+            _currentProperty = null;
+        }
+
+        private void ParseColumnName(InvocationExpressionSyntax node)
+        {
+            if (node == null || ParsedEntity == null)
+                return;
+
+            var columnName = node
+                .ArgumentList
+                .DescendantNodes()
+                .OfType<LiteralExpressionSyntax>()
+                .Select(t => t.Token.ValueText)
+                .FirstOrDefault();
+
+            if (string.IsNullOrEmpty(columnName))
+                return;
+
+            _currentProperty = new ParsedProperty { ColumnName = columnName };
+            ParsedEntity.Properties.Add(_currentProperty);
+        }
+
+        private void ParseTable(InvocationExpressionSyntax node)
+        {
+            if (node == null || ParsedEntity == null)
+                return;
+
+            var arguments = node
+                .ArgumentList
+                .DescendantNodes()
+                .OfType<LiteralExpressionSyntax>()
+                .Select(t => t.Token.ValueText)
+                .ToList();
+
+            if (arguments.Count == 0)
+                return;
+
+            if (arguments.Count >= 1)
+                ParsedEntity.TableName = arguments[0];
+
+            if (arguments.Count >= 2)
+                ParsedEntity.TableSchema = arguments[1];
+        }
+
+        private void ParseClassNames(ClassDeclarationSyntax node)
+        {
+            if (node == null)
+                return;
+
+            var baseType = node.BaseList
+                .DescendantNodes()
+                .OfType<GenericNameSyntax>()
+                .FirstOrDefault(t => t.Identifier.ValueText == MappingBaseType);
+
+            if (baseType == null)
+                return;
+
+            var firstArgument = baseType
+                .TypeArgumentList
+                .Arguments
+                .FirstOrDefault();
+
+            // last identifier is class name
+            var entityClass = firstArgument
+                .DescendantNodesAndSelf()
+                .OfType<IdentifierNameSyntax>()
+                .Select(s => s.Identifier.ValueText)
+                .LastOrDefault();
+
+            var mappingClass = node.Identifier.Text;
+
+            if (string.IsNullOrEmpty(entityClass) || string.IsNullOrEmpty(mappingClass))
+                return;
 
             if (ParsedEntity == null)
                 ParsedEntity = new ParsedEntity();
 
-            ParsedEntity.EntityClass = entity.MemberName;
-            ParsedEntity.MappingClass = typeDeclaration.Name;
-
-            return base.VisitTypeDeclaration(typeDeclaration, ParsedEntity);
-        }
-
-        public override object VisitInvocationExpression(InvocationExpression invocationExpression, object data)
-        {
-            if (data == null)
-                return base.VisitInvocationExpression(invocationExpression, null);
-
-            // visit all the methods
-            var identifier = invocationExpression.Target.Children.OfType<Identifier>().FirstOrDefault();
-            string methodName = identifier == null ? string.Empty : identifier.Name;
-
-            // the different types of incoming data, helps us know what we're parsing
-            var parsedEntity = data as ParsedEntity;
-            var parsedProperty = data as ParsedProperty;
-            var parsedRelationship = data as ParsedRelationship;
-
-            switch (methodName)
-            {
-                case "ToTable":
-                    var tableNameExpression = invocationExpression.Arguments
-                      .OfType<PrimitiveExpression>()
-                      .ToArray();
-
-                    string tableName = null;
-                    string tableSchema = null;
-
-                    if (tableNameExpression.Length >= 1)
-                        tableName = tableNameExpression[0].Value.ToString();
-                    if (tableNameExpression.Length >= 2)
-                        tableSchema = tableNameExpression[1].Value.ToString();
-
-                    // ToTable is either Entity -> Table map or Many to Many map
-                    if (parsedEntity != null)
-                    {
-                        // when data is ParsedEntity, entity map
-                        parsedEntity.TableName = tableName;
-                        parsedEntity.TableSchema = tableSchema;
-                    }
-                    else if (parsedRelationship != null)
-                    {
-                        // when data is ParsedRelationship, many to many map
-                        parsedRelationship.JoinTable = tableName;
-                        parsedRelationship.JoinSchema = tableSchema;
-                    }
-                    break;
-                case "HasColumnName":
-                    var columnNameExpression = invocationExpression.Arguments
-                      .OfType<PrimitiveExpression>()
-                      .FirstOrDefault();
-
-                    if (columnNameExpression == null)
-                        break;
-
-                    // property to column map start.
-                    string columnName = columnNameExpression.Value.ToString();
-                    var property = new ParsedProperty { ColumnName = columnName };
-                    ParsedEntity.Properties.Add(property);
-
-                    //only have column info at this point. pass data to get property name.
-                    return base.VisitInvocationExpression(invocationExpression, property);
-                case "Property":
-                    var propertyExpression = invocationExpression.Arguments
-                      .OfType<LambdaExpression>()
-                      .FirstOrDefault();
-
-                    if (parsedProperty == null || propertyExpression == null)
-                        break;
-
-                    // ParsedProperty is passed in as data from HasColumnName, add property name
-                    var propertyBodyExpression = propertyExpression.Body as MemberReferenceExpression;
-                    if (propertyBodyExpression != null)
-                        parsedProperty.PropertyName = propertyBodyExpression.MemberName;
-
-                    break;
-                case "Map":
-                    // start a new Many to Many relationship
-                    var mapRelation = new ParsedRelationship();
-                    ParsedEntity.Relationships.Add(mapRelation);
-                    // pass to child nodes to fill in data
-                    return base.VisitInvocationExpression(invocationExpression, mapRelation);
-                case "HasForeignKey":
-                    var foreignExpression = invocationExpression.Arguments
-                      .OfType<LambdaExpression>()
-                      .FirstOrDefault();
-
-                    if (foreignExpression == null)
-                        break;
-
-                    // when only 1 fkey, body will be member ref
-                    if (foreignExpression.Body is MemberReferenceExpression)
-                    {
-                        var foreignBodyExpression = foreignExpression.Body as MemberReferenceExpression;
-                        // start a new relationship
-                        var foreignRelation = new ParsedRelationship();
-                        ParsedEntity.Relationships.Add(foreignRelation);
-
-                        foreignRelation.ThisProperties.Add(foreignBodyExpression.MemberName);
-                        // pass as data for child nodes to fill in data
-                        return base.VisitInvocationExpression(invocationExpression, foreignRelation);
-                    }
-                    // when more then 1 fkey, body will be an anonymous type
-                    if (foreignExpression.Body is AnonymousTypeCreateExpression)
-                    {
-                        var foreignBodyExpression = foreignExpression.Body as AnonymousTypeCreateExpression;
-                        var foreignRelation = new ParsedRelationship();
-                        ParsedEntity.Relationships.Add(foreignRelation);
-
-                        var properties = foreignBodyExpression.Children
-                          .OfType<MemberReferenceExpression>()
-                          .Select(m => m.MemberName);
-
-                        foreignRelation.ThisProperties.AddRange(properties);
-
-                        return base.VisitInvocationExpression(invocationExpression, foreignRelation);
-                    }
-                    break;
-                case "HasMany":
-                    var hasManyExpression = invocationExpression.Arguments
-                      .OfType<LambdaExpression>()
-                      .FirstOrDefault();
-
-                    if (parsedRelationship == null || hasManyExpression == null)
-                        break;
-
-                    // filling existing relationship data
-                    var hasManyBodyExpression = hasManyExpression.Body as MemberReferenceExpression;
-                    if (hasManyBodyExpression != null)
-                        parsedRelationship.ThisPropertyName = hasManyBodyExpression.MemberName;
-
-                    break;
-                case "WithMany":
-                    var withManyExpression = invocationExpression.Arguments
-                      .OfType<LambdaExpression>()
-                      .FirstOrDefault();
-
-                    if (parsedRelationship == null || withManyExpression == null)
-                        break;
-
-                    // filling existing relationship data
-                    var withManyBodyExpression = withManyExpression.Body as MemberReferenceExpression;
-                    if (withManyBodyExpression != null)
-                        parsedRelationship.OtherPropertyName = withManyBodyExpression.MemberName;
-
-                    break;
-                case "HasRequired":
-                case "HasOptional":
-                    var hasExpression = invocationExpression.Arguments
-                      .OfType<LambdaExpression>()
-                      .FirstOrDefault();
-
-                    if (parsedRelationship == null || hasExpression == null)
-                        break;
-
-                    // filling existing relationship data
-                    var hasBodyExpression = hasExpression.Body as MemberReferenceExpression;
-                    if (hasBodyExpression != null)
-                        parsedRelationship.ThisPropertyName = hasBodyExpression.MemberName;
-
-                    break;
-                case "MapLeftKey":
-                    if (parsedRelationship == null)
-                        break;
-
-                    var leftKeyExpression = invocationExpression.Arguments
-                      .OfType<PrimitiveExpression>()
-                      .Select(e => e.Value.ToString());
-
-                    parsedRelationship.JoinThisColumn.AddRange(leftKeyExpression);
-                    break;
-                case "MapRightKey":
-                    if (parsedRelationship == null)
-                        break;
-
-                    var rightKeyExpression = invocationExpression.Arguments
-                      .OfType<PrimitiveExpression>()
-                      .Select(e => e.Value.ToString());
-
-                    parsedRelationship.JoinOtherColumn.AddRange(rightKeyExpression);
-                    break;
-            }
-
-            return base.VisitInvocationExpression(invocationExpression, data);
+            ParsedEntity.MappingClass = mappingClass;
+            ParsedEntity.EntityClass = entityClass;
         }
     }
 
@@ -275,15 +284,13 @@ namespace SchemaMapper
             if (string.IsNullOrEmpty(mappingFile) || !File.Exists(mappingFile))
                 return null;
 
-            var parser = new CSharpParser();
-            SyntaxTree syntaxTree;
-
-            using (var stream = File.OpenText(mappingFile))
-                syntaxTree = parser.Parse(stream, mappingFile);
+            var code = File.ReadAllText(mappingFile);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code);
+            var root = (CompilationUnitSyntax)syntaxTree.GetRoot();
 
             var visitor = new MappingVisitor();
+            visitor.Visit(root);
 
-            visitor.VisitSyntaxTree(syntaxTree, null);
             var parsedEntity = visitor.ParsedEntity;
 
             if (parsedEntity != null)
@@ -318,65 +325,83 @@ namespace SchemaMapper
         public string ContextProperty { get; set; }
     }
 
-    public class ContextVisitor : DepthFirstAstVisitor<object, object>
+    public class ContextVisitor : CSharpSyntaxWalker
     {
         public ContextVisitor()
         {
             ContextBaseType = "DbContext";
-            DataSetTypes = new HashSet<string> {"DbSet", "IDbSet"};
+            DataSetTypes = new HashSet<string> { "DbSet", "IDbSet" };
         }
 
         public string ContextBaseType { get; set; }
+
         public HashSet<string> DataSetTypes { get; set; }
 
         public ParsedContext ParsedContext { get; set; }
 
-        public override object VisitTypeDeclaration(TypeDeclaration typeDeclaration, object data)
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            var baseType = typeDeclaration.BaseTypes
-              .OfType<MemberType>()
-              .FirstOrDefault();
+            var hasBaseType = node.BaseList
+                .DescendantNodes()
+                .OfType<IdentifierNameSyntax>()
+                .Any(i => i.Identifier.ValueText == ContextBaseType);
 
-            // warning: if inherited from custom base type, this will break
-            // anyway to improve this?
-            if (baseType == null || baseType.MemberName != ContextBaseType)
-                return base.VisitTypeDeclaration(typeDeclaration, data);
+            if (hasBaseType)
+            {
+                var name = node.Identifier.Text;
+                if (ParsedContext == null)
+                    ParsedContext = new ParsedContext();
 
-            if (ParsedContext == null)
-                ParsedContext = new ParsedContext();
+                ParsedContext.ContextClass = name;
+            }
 
-            ParsedContext.ContextClass = typeDeclaration.Name;
-
-            return base.VisitTypeDeclaration(typeDeclaration, ParsedContext);
+            base.VisitClassDeclaration(node);
         }
 
-        public override object VisitPropertyDeclaration(PropertyDeclaration propertyDeclaration, object data)
+        public override void VisitPropertyDeclaration(PropertyDeclarationSyntax node)
         {
-            if (data == null)
-                return base.VisitPropertyDeclaration(propertyDeclaration, null);
+            ParseProperty(node);
+            base.VisitPropertyDeclaration(node);
+        }
 
-            // look for property to return generic DbSet type
-            var memberType = propertyDeclaration.ReturnType as MemberType;
-            if (memberType == null || !DataSetTypes.Contains(memberType.MemberName))
-                return base.VisitPropertyDeclaration(propertyDeclaration, data);
+        private void ParseProperty(PropertyDeclarationSyntax node)
+        {
+            var returnType = node.Type
+                .DescendantNodesAndSelf()
+                .OfType<GenericNameSyntax>()
+                .FirstOrDefault();
 
-            // get the first generic type
-            var entityType = memberType.TypeArguments
-              .OfType<MemberType>()
-              .FirstOrDefault();
+            // expecting generic return type with 1 argument
+            if (returnType == null || returnType.TypeArgumentList.Arguments.Count != 1)
+                return;
 
-            if (entityType == null)
-                return base.VisitPropertyDeclaration(propertyDeclaration, data);
+            var returnName = returnType.Identifier.ValueText;
+            if (!DataSetTypes.Contains(returnName))
+                return;
+
+            var firstArgument = returnType
+                .TypeArgumentList
+                .Arguments
+                .FirstOrDefault();
+
+            // last identifier is class name
+            var className = firstArgument
+                .DescendantNodesAndSelf()
+                .OfType<IdentifierNameSyntax>()
+                .Select(s => s.Identifier.ValueText)
+                .LastOrDefault();
+
+            var propertyName = node.Identifier.ValueText;
+
+            if (string.IsNullOrEmpty(className) || string.IsNullOrEmpty(propertyName))
+                return;
 
             var entitySet = new ParsedEntitySet
             {
-                EntityClass = entityType.MemberName,
-                ContextProperty = propertyDeclaration.Name
+                EntityClass = className,
+                ContextProperty = propertyName
             };
-
             ParsedContext.Properties.Add(entitySet);
-
-            return base.VisitPropertyDeclaration(propertyDeclaration, data);
         }
     }
 
@@ -387,15 +412,13 @@ namespace SchemaMapper
             if (string.IsNullOrEmpty(contextFile) || !File.Exists(contextFile))
                 return null;
 
-            var parser = new CSharpParser();
-            SyntaxTree syntaxTree;
-
-            using (var stream = File.OpenText(contextFile))
-                syntaxTree = parser.Parse(stream, contextFile);
+            var code = File.ReadAllText(contextFile);
+            var syntaxTree = CSharpSyntaxTree.ParseText(code);
+            var root = (CompilationUnitSyntax)syntaxTree.GetRoot();
 
             var visitor = new ContextVisitor();
+            visitor.Visit(root);
 
-            visitor.VisitSyntaxTree(syntaxTree, null);
             var parsedContext = visitor.ParsedContext;
 
             if (parsedContext != null)
@@ -531,71 +554,14 @@ namespace SchemaMapper
         private static void UpdateRelationships(EntityContext generatedContext, Entity entity, ParsedEntity parsedEntity)
         {
             // sync relationships
-            foreach (var parsedRelationship in parsedEntity.Relationships.Where(r => r.JoinTable == null))
+            foreach (var parsedRelationship in parsedEntity.Relationships)
             {
                 var parsedProperties = parsedRelationship.ThisProperties;
                 var relationship = entity.Relationships
-                    .Where(r => !r.IsManyToMany)
-                    .FirstOrDefault(r => r.ThisProperties.Except(parsedProperties).Count() == 0);
+                    .FirstOrDefault(r => !r.ThisProperties.Except(parsedProperties).Any());
 
                 if (relationship == null)
                     continue;
-
-                bool isThisSame = relationship.ThisPropertyName == parsedRelationship.ThisPropertyName;
-                bool isOtherSame = relationship.OtherPropertyName == parsedRelationship.OtherPropertyName;
-
-                if (isThisSame && isOtherSame)
-                    continue;
-
-                if (!isThisSame)
-                {
-                    Debug.WriteLine("Rename Relationship Property '{0}.{1}' to '{0}.{2}'.",
-                          relationship.ThisEntity,
-                          relationship.ThisPropertyName,
-                          parsedRelationship.ThisPropertyName);
-
-                    relationship.ThisPropertyName = parsedRelationship.ThisPropertyName;
-                }
-                if (!isOtherSame)
-                {
-                    Debug.WriteLine("Rename Relationship Property '{0}.{1}' to '{0}.{2}'.",
-                          relationship.OtherEntity,
-                          relationship.OtherPropertyName,
-                          parsedRelationship.OtherPropertyName);
-
-                    relationship.OtherPropertyName = parsedRelationship.OtherPropertyName;
-                }
-
-                // sync other relationship
-                var otherEntity = generatedContext.Entities.ByClass(relationship.OtherEntity);
-                if (otherEntity == null)
-                    continue;
-
-                var otherRelationship = otherEntity.Relationships.ByName(relationship.RelationshipName);
-                if (otherRelationship == null)
-                    continue;
-
-                otherRelationship.ThisPropertyName = relationship.OtherPropertyName;
-                otherRelationship.OtherPropertyName = relationship.ThisPropertyName;
-            }
-
-            // sync many to many
-            foreach (var parsedRelationship in parsedEntity.Relationships.Where(r => r.JoinTable != null))
-            {
-                var joinThisColumn = parsedRelationship.JoinThisColumn;
-                var joinOtherColumn = parsedRelationship.JoinOtherColumn;
-
-                var relationship = entity.Relationships
-                  .Where(r => r.IsManyToMany)
-                  .FirstOrDefault(r =>
-                                  r.JoinThisColumn.Except(joinThisColumn).Count() == 0 &&
-                                  r.JoinOtherColumn.Except(joinOtherColumn).Count() == 0 &&
-                                  r.JoinTable == parsedRelationship.JoinTable &&
-                                  r.JoinSchema == parsedRelationship.JoinSchema);
-
-                if (relationship == null)
-                    continue;
-
 
                 bool isThisSame = relationship.ThisPropertyName == parsedRelationship.ThisPropertyName;
                 bool isOtherSame = relationship.OtherPropertyName == parsedRelationship.OtherPropertyName;

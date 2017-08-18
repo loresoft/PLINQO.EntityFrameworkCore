@@ -26,9 +26,9 @@ namespace <%= MappingNamespace %>
 {
     public partial class <%= Entity.MappingName.ToSafeName() %>
     {
-        public void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<<%= EntityNamespace %>.<%= Entity.ClassName.ToSafeName() %>> builder)
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<<%= EntityNamespace %>.<%= Entity.ClassName.ToSafeName() %>> builder)
         {
-
+            // add mapping overrides here
         }
     }
 }

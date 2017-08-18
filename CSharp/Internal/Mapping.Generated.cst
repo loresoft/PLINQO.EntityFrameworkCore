@@ -64,6 +64,9 @@ foreach(var r in Entity.Relationships.Where(e => e.IsMapped))
 
             InitializeMapping(builder);
         }
+
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<<%= EntityNamespace %>.<%= Entity.ClassName.ToSafeName() %>> builder);
+
     }
 }
 

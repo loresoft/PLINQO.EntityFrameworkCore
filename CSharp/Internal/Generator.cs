@@ -62,6 +62,7 @@ namespace SchemaMapper
 
         public bool IncludeViews { get; set; }
 
+
         public string CleanName(string name)
         {
             string rename;
@@ -364,6 +365,10 @@ namespace SchemaMapper
                     if (columnSchema.IsUnique)
                         property.IsUnique = true;
                 }
+
+                // support array type
+                if (!string.IsNullOrEmpty(property.NativeType) && property.NativeType.EndsWith("[]") && !property.SystemType.IsArray)
+                    property.SystemType = property.SystemType.MakeArrayType();
 
                 property.IsProcessed = true;
             }
