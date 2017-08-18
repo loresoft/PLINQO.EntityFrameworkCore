@@ -33,6 +33,12 @@ namespace SchemaMapper
     {
         public string ColumnName { get; set; }
         public string PropertyName { get; set; }
+
+        public bool IsValid()
+        {
+            return !string.IsNullOrEmpty(ColumnName)
+                && !string.IsNullOrEmpty(PropertyName);
+        }
     }
 
     [DebuggerDisplay("This: {ThisPropertyName}, Other: {OtherPropertyName}")]
@@ -47,6 +53,14 @@ namespace SchemaMapper
         public List<string> ThisProperties { get; private set; }
 
         public string OtherPropertyName { get; set; }
+
+        public bool IsValid()
+        {
+            return !string.IsNullOrEmpty(ThisPropertyName)
+                && !string.IsNullOrEmpty(OtherPropertyName)
+                && ThisProperties.Count > 0;
+        }
+
     }
 
     public class MappingVisitor : CSharpSyntaxWalker
@@ -138,7 +152,7 @@ namespace SchemaMapper
                 return null;
 
             var simpleExpression = lambaExpression
-                .DescendantNodes()
+                .ChildNodes()
                 .OfType<MemberAccessExpressionSyntax>()
                 .FirstOrDefault();
 
@@ -146,7 +160,7 @@ namespace SchemaMapper
                 return null;
 
             var propertyName = simpleExpression
-                .DescendantNodes()
+                .ChildNodes()
                 .OfType<IdentifierNameSyntax>()
                 .Select(s => s.Identifier.ValueText)
                 .LastOrDefault();
@@ -161,7 +175,14 @@ namespace SchemaMapper
                 return;
 
             var propertyName = ParseLambaExpression(node);
-            _currentRelationship.ThisPropertyName = propertyName;
+            if (!string.IsNullOrEmpty(propertyName))
+                _currentRelationship.ThisPropertyName = propertyName;
+
+            // add and reset current relationship
+            if (_currentRelationship.IsValid())
+                ParsedEntity.Relationships.Add(_currentRelationship);
+
+            _currentRelationship = null;
         }
 
         private void ParseWithMany(InvocationExpressionSyntax node)
@@ -170,8 +191,10 @@ namespace SchemaMapper
                 return;
 
             var propertyName = ParseLambaExpression(node);
-            _currentRelationship.OtherPropertyName = propertyName;
+            if (string.IsNullOrEmpty(propertyName))
+                return;
 
+            _currentRelationship.OtherPropertyName = propertyName;
         }
 
         private void ParseForeignKey(InvocationExpressionSyntax node)
@@ -181,9 +204,11 @@ namespace SchemaMapper
 
             var propertyName = ParseLambaExpression(node);
 
-            _currentRelationship = new ParsedRelationship();
-            ParsedEntity.Relationships.Add(_currentRelationship);
+            if (string.IsNullOrEmpty(propertyName))
+                return;
 
+            // start new relationship
+            _currentRelationship = new ParsedRelationship();
             _currentRelationship.ThisProperties.Add(propertyName);
         }
 
@@ -193,8 +218,13 @@ namespace SchemaMapper
                 return;
 
             var propertyName = ParseLambaExpression(node);
+            if (!string.IsNullOrEmpty(propertyName))
+                _currentProperty.PropertyName = propertyName;
 
-            _currentProperty.PropertyName = propertyName;
+            // add and reset current property
+            if (_currentProperty.IsValid())
+                ParsedEntity.Properties.Add(_currentProperty);
+
             _currentProperty = null;
         }
 
@@ -214,7 +244,6 @@ namespace SchemaMapper
                 return;
 
             _currentProperty = new ParsedProperty { ColumnName = columnName };
-            ParsedEntity.Properties.Add(_currentProperty);
         }
 
         private void ParseTable(InvocationExpressionSyntax node)

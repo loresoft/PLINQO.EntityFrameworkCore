@@ -42,7 +42,7 @@ namespace SchemaMapper.Tests
         [Fact]
         public void ParseTwoForeignKeyMapping()
         {
-            string mappingFile = @"..\..\..\Ugly.Data\Mapping\TwoForeignKeyMap.Generated.cs";
+            string mappingFile = @"..\..\..\..\Samples\Ugly.Data\Mapping\TwoForeignKeyMap.Generated.cs";
 
             var result = MappingParser.Parse(mappingFile);
             Assert.NotNull(result);
