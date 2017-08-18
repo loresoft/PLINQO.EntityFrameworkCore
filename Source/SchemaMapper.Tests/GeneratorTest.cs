@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using CodeSmith.Engine.Json;
-using Newtonsoft.Json;
 using SchemaExplorer;
-using SchemaExplorer.Serialization;
 using Xunit;
 
 namespace SchemaMapper.Tests
 {
-    public class GeneratorTest
+    public class GeneratorTest : TestBase
     {
         [Fact]
         public void GenerateTrackerDatabaseTest()
@@ -21,6 +17,7 @@ namespace SchemaMapper.Tests
 
             Assert.NotNull(entityContext);
 
+            SaveAsJson(entityContext, $"..\\..\\..\\Tracker-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
         [Fact]
@@ -33,6 +30,8 @@ namespace SchemaMapper.Tests
             EntityContext entityContext = generator.Generate(selector);
 
             Assert.NotNull(entityContext);
+
+            SaveAsJson(entityContext, $"..\\..\\..\\Ugly-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
         [Fact]
@@ -46,6 +45,7 @@ namespace SchemaMapper.Tests
 
             Assert.NotNull(entityContext);
 
+            SaveAsJson(entityContext, $"..\\..\\..\\Petshop-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
         [Fact]
@@ -83,18 +83,8 @@ namespace SchemaMapper.Tests
             EntityContext entityContext = generator.Generate(selector);
 
             Assert.NotNull(entityContext);
+
+            SaveAsJson(entityContext, $"..\\..\\..\\Petshop-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
-
-
-        private SchemaSelector GetDatabaseSchema(string name)
-        {
-            var databaseSchema = DatabaseSchemaSerializer.GetDatabaseSchemaFromName(name);
-
-            var selector = new SchemaSelector(databaseSchema.Provider, databaseSchema.ConnectionString);
-            selector.Database.DeepLoad = true;
-
-            return selector;
-        }
-
     }
 }

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace SchemaMapper.Tests
 {
-    public class RenameTest
+    public class RenameTest : TestBase
     {
         [Fact]
         public void RenameEntity()
@@ -53,17 +53,5 @@ namespace SchemaMapper.Tests
             using (var writer = XmlWriter.Create(@"..\..\Tracker.After.xml", settings))
                 serializer.Serialize(writer, entityContext);
         }
-
-
-        private SchemaSelector GetDatabaseSchema(string name)
-        {
-            var databaseSchema = DatabaseSchemaSerializer.GetDatabaseSchemaFromName(name);
-
-            var selector = new SchemaSelector(databaseSchema.Provider, databaseSchema.ConnectionString);
-            selector.Database.DeepLoad = true;
-
-            return selector;
-        }
-
     }
 }

@@ -8,9 +8,9 @@ namespace Tracker.Data.Mapping
 {
     public partial class UserRoleMap
     {
-        public void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.UserRole> builder)
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.UserRole> builder)
         {
-
+            // add mapping overrides here
         }
     }
 }

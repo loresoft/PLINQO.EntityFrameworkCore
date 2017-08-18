@@ -7,33 +7,36 @@ using Xunit;
 
 namespace SchemaMapper.Tests
 {
-    public class ParserTest
+    public class ParserTest : TestBase
     {
         [Fact]
         public void ParseContext()
         {
-            string contextFile = @"..\..\..\Tracker.Core\TrackerContext.Generated.cs";
+            string contextFile = @"..\..\..\..\Samples\Tracker.Data\TrackerContext.Generated.cs";
             var result = ContextParser.Parse(contextFile);
 
             Assert.NotNull(result);
+            SaveAsJson(result, $"..\\..\\..\\TrackerContext.Generated-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
         [Fact]
         public void ParseMapping()
         {
-            string mappingFile = @"..\..\..\Tracker.Core\Mapping\TaskMap.Generated.cs";
+            string mappingFile = @"..\..\..\..\Samples\Tracker.Data\Mapping\TaskMap.Generated.cs";
 
             var result = MappingParser.Parse(mappingFile);
             Assert.NotNull(result);
+            SaveAsJson(result, $"..\\..\\..\\TaskMap.Generated-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
         [Fact]
         public void ParseManyToManyMapping()
         {
-            string mappingFile = @"..\..\..\Tracker.Core\Mapping\RoleMap.Generated.cs";
+            string mappingFile = @"..\..\..\..\Samples\Tracker.Data\Mapping\RoleMap.Generated.cs";
 
             var result = MappingParser.Parse(mappingFile);
             Assert.NotNull(result);
+            SaveAsJson(result, $"..\\..\\..\\RoleMap.Generated-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
         [Fact]
@@ -43,6 +46,7 @@ namespace SchemaMapper.Tests
 
             var result = MappingParser.Parse(mappingFile);
             Assert.NotNull(result);
+            SaveAsJson(result, $"..\\..\\..\\TwoForeignKeyMap.Generated-{DateTime.Now:yyyy-dd-M--HH-mm-ss}.json");
         }
 
 
@@ -68,25 +72,13 @@ namespace SchemaMapper.Tests
             //using (var writer = XmlWriter.Create(@"..\..\Tracker.Generated.xml", settings))
             //    serializer.Serialize(writer, entityContext);
 
-            string contextDirectory = @"..\..\..\Tracker.Core";
-            string mappingDirectory = @"..\..\..\Tracker.Core\Mapping";
+            string contextDirectory = @"..\..\..\..\Samples\Tracker.Data";
+            string mappingDirectory = @"..\..\..\..\Samples\Tracker.Data\Mapping";
 
             Synchronizer.UpdateFromSource(entityContext, contextDirectory, mappingDirectory);
 
             //using (var writer = XmlWriter.Create(@"..\..\Tracker.Updated.xml", settings))
             //    serializer.Serialize(writer, entityContext);
         }
-
-
-        private SchemaSelector GetDatabaseSchema(string name)
-        {
-            var databaseSchema = DatabaseSchemaSerializer.GetDatabaseSchemaFromName(name);
-
-            var selector = new SchemaSelector(databaseSchema.Provider, databaseSchema.ConnectionString);
-            selector.Database.DeepLoad = true;
-
-            return selector;
-        }
-
     }
 }

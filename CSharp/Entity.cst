@@ -3,8 +3,9 @@
 <%@ Assembly Name="SchemaExplorer" %>
 <%@ Assembly Name="CodeSmith.CustomProperties" %>
 
-<%@ Assembly Name="Microsoft.CodeAnalysis.CSharp" Path="..\Common\Tools\Microsoft.CodeAnalysis.CSharp\lib\netstandard1.3" %>
-<%@ Assembly Name="Microsoft.CodeAnalysis" Path="..\Common\Tools\Microsoft.CodeAnalysis.Common\lib\netstandard1.3" %>
+<%@ Assembly Name="Microsoft.CodeAnalysis.CSharp" Path="..\packages\Microsoft.CodeAnalysis.CSharp\lib\netstandard1.3" %>
+<%@ Assembly Name="Microsoft.CodeAnalysis" Path="..\packages\Microsoft.CodeAnalysis.Common\lib\netstandard1.3" %>
+<%@ Assembly Name="System.Collections.Immutable" Path="..\packages\System.Collections.Immutable\lib\portable-net45+win8+wp8+wpa81" %>
 <%@ Assembly Name="System.Text.Encoding" %>
 <%@ Assembly Name="System.Threading.Tasks" %>
 

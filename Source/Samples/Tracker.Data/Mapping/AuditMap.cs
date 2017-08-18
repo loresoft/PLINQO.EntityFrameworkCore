@@ -8,9 +8,9 @@ namespace Tracker.Data.Mapping
 {
     public partial class AuditMap
     {
-        public void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Audit> builder)
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Audit> builder)
         {
-
+            // add mapping overrides here
         }
     }
 }

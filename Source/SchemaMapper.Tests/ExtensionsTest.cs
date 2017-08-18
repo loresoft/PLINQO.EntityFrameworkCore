@@ -60,10 +60,10 @@ namespace SchemaMapper.Tests
             Assert.Equal("long", actual);
 
             actual = dateTimeType.ToNullableType(true);
-            Assert.Equal("System.DateTime?", actual);
+            Assert.Equal("DateTime?", actual);
 
             actual = dateTimeType.ToNullableType(false);
-            Assert.Equal("System.DateTime", actual);
+            Assert.Equal("DateTime", actual);
 
             actual = stringType.ToNullableType(true);
             Assert.Equal("string", actual);

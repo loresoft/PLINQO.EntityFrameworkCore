@@ -8,9 +8,9 @@ namespace Tracker.Data.Mapping
 {
     public partial class PriorityMap
     {
-        public void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Priority> builder)
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Priority> builder)
         {
-
+            // add mapping overrides here
         }
     }
 }

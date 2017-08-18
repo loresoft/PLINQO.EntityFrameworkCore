@@ -8,9 +8,9 @@ namespace Tracker.Data.Mapping
 {
     public partial class TaskMap
     {
-        public void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Task> builder)
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Task> builder)
         {
-
+            // add mapping overrides here
         }
     }
 }

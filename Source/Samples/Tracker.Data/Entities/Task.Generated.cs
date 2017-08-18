@@ -27,13 +27,13 @@ namespace Tracker.Data.Entities
         public int CreatedId { get; set; }
         public string Summary { get; set; }
         public string Details { get; set; }
-        public System.DateTime? StartDate { get; set; }
-        public System.DateTime? DueDate { get; set; }
-        public System.DateTime? CompleteDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? DueDate { get; set; }
+        public DateTime? CompleteDate { get; set; }
         public int? AssignedId { get; set; }
-        public System.DateTime CreatedDate { get; set; }
-        public System.DateTime ModifiedDate { get; set; }
-        public System.Byte[] RowVersion { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime ModifiedDate { get; set; }
+        public Byte[] RowVersion { get; set; }
         public string LastModifiedBy { get; set; }
 
         public virtual ICollection<Audit> Audits { get; set; }

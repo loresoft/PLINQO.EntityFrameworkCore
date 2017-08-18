@@ -8,9 +8,9 @@ namespace Tracker.Data.Mapping
 {
     public partial class StatusMap
     {
-        public void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Status> builder)
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.Status> builder)
         {
-
+            // add mapping overrides here
         }
     }
 }

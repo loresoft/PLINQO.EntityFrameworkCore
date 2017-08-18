@@ -48,5 +48,8 @@ namespace Tracker.Data.Mapping
 
             InitializeMapping(builder);
         }
+
+        partial void InitializeMapping(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Tracker.Data.Entities.UserRole> builder);
+
     }
 }

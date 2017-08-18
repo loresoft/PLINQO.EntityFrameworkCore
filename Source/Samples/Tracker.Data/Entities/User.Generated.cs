@@ -33,17 +33,17 @@ namespace Tracker.Data.Entities
         public string EmailAddress { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public System.Byte[] Avatar { get; set; }
-        public System.DateTime CreatedDate { get; set; }
-        public System.DateTime ModifiedDate { get; set; }
-        public System.Byte[] RowVersion { get; set; }
+        public Byte[] Avatar { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime ModifiedDate { get; set; }
+        public Byte[] RowVersion { get; set; }
         public string PasswordHash { get; set; }
         public string PasswordSalt { get; set; }
         public string Comment { get; set; }
         public bool IsApproved { get; set; }
-        public System.DateTime? LastLoginDate { get; set; }
-        public System.DateTime LastActivityDate { get; set; }
-        public System.DateTime? LastPasswordChangeDate { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public DateTime LastActivityDate { get; set; }
+        public DateTime? LastPasswordChangeDate { get; set; }
         public string AvatarType { get; set; }
 
         public virtual ICollection<Audit> Audits { get; set; }

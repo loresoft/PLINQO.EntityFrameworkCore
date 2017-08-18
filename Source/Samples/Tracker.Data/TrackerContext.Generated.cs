@@ -25,7 +25,7 @@ namespace Tracker.Data
         public DbSet<Tracker.Data.Entities.Priority> Priorities { get; set; }
         public DbSet<Tracker.Data.Entities.Role> Roles { get; set; }
         public DbSet<Tracker.Data.Entities.Status> Status { get; set; }
-        public DbSet<Tracker.Data.Entities.TaskExtended> TaskExtendeds { get; set; }
+        public DbSet<Tracker.Data.Entities.TaskExtended> TaskExtensions { get; set; }
         public DbSet<Tracker.Data.Entities.UserRole> UserRoles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

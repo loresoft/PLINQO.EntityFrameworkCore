@@ -453,9 +453,11 @@ namespace SchemaMapper
 
             // parse context
             ParsedContext parsedContext = null;
-            var files = Directory.EnumerateFiles(contextDirectory, "*.Generated.cs").GetEnumerator();
-            while (files.MoveNext() && parsedContext == null)
-                parsedContext = ContextParser.Parse(files.Current);
+            using (var files = Directory.EnumerateFiles(contextDirectory, "*.Generated.cs").GetEnumerator())
+            {
+                while (files.MoveNext() && parsedContext == null)
+                    parsedContext = ContextParser.Parse(files.Current);
+            }
 
             if (parsedContext == null)
                 return;

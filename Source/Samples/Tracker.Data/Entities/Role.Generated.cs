@@ -24,9 +24,9 @@ namespace Tracker.Data.Entities
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public System.DateTime CreatedDate { get; set; }
-        public System.DateTime ModifiedDate { get; set; }
-        public System.Byte[] RowVersion { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime ModifiedDate { get; set; }
+        public Byte[] RowVersion { get; set; }
 
         public virtual ICollection<UserRole> UserRoles { get; set; }
     }
