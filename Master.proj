@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <BuildFolder>$(MSBuildProjectDirectory)\Build</BuildFolder>
+    <ToolFolder>$(MSBuildProjectDirectory)\Tools</ToolFolder>
+
+    <MSBuildCommunityTasksPath>$(ToolFolder)\MSBuildTasks\tools</MSBuildCommunityTasksPath>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.targets"/>
+
+  <!-- Version Number -->
+  <PropertyGroup>
+    <BuildNumber Condition=" '$(APPVEYOR_BUILD_NUMBER)' != '' ">$(APPVEYOR_BUILD_NUMBER)</BuildNumber>
+    <BuildNumber Condition=" '$(BUILD_NUMBER)' != '' ">$(BUILD_NUMBER)</BuildNumber>
+    <BuildNumber Condition=" '$(BuildNumber)' == '' ">0</BuildNumber>
+
+    <BuildConfiguration  Condition=" '$(BuildConfiguration)' == '' ">Release</BuildConfiguration>
+
+    <Major Condition=" '$(Major)' == '' ">1</Major>
+    <Minor Condition=" '$(Minor)' == '' ">0</Minor>
+
+    <PackageVersion>$(Major).$(Minor).$(BuildNumber)</PackageVersion>
+  </PropertyGroup>
+
+
+  <Target Name="Zip" DependsOnTargets="">
+    <ItemGroup>
+      <ZipFiles Include="Common\*.dll" />
+      <ZipFiles Include="CSharp\Internal\*.cst" />
+      <ZipFiles Include="CSharp\Internal\*.cs" />
+      <ZipFiles Include="CSharp\*.cst"  />  
+    </ItemGroup>
+
+    <Zip Files="@(ZipFiles)"
+         WorkingDirectory="$(MSBuildProjectDirectory)"
+         ZipFileName="PLINQO.EntityFrameworkCore.v$(PackageVersion).zip" />
+  </Target>
+
+  <Target Name="Package" DependsOnTargets="">
+    <NuGetPack File="PLINQO.EntityFrameworkCore.nuspec"
+               OutputDirectory="$(MSBuildProjectDirectory)"
+               Version="$(PackageVersion)" />
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="Zip;Package">
+  </Target>
+
+</Project>

@@ -105,6 +105,12 @@
              Default=""
              Optional="True"
              Description="Name value pair for custom renaming. Name is orginal name, Value is new name." %>
+<%@ Property Name="IncludeEditable"
+             Type="Boolean"
+             Category="5.Customization"
+             Default="True"
+             Optional="True"
+             Description="Include editable partial files." %>
 
 
 
@@ -239,7 +245,7 @@ Generating Entities ...
         string editableFile = className + ".cs";
         editableFile = Path.Combine(rootDirectory, editableFile);
 
-        if (!File.Exists(editableFile))
+        if (IncludeEditable && !File.Exists(editableFile))
         {
           editableClass.EntityContext = entityContext;
 
@@ -247,7 +253,11 @@ Generating Entities ...
           editableClass.RenderToFile(editableFile, true);
         }
 
-        string generatedFile = className + ".Generated.cs";
+        string generatedFile = className;
+        if (IncludeEditable) 
+            generatedFile += ".Generated";
+        
+        generatedFile += ".cs";
         generatedFile = Path.Combine(rootDirectory, generatedFile);
 
         generatedClass.EntityContext = entityContext;
@@ -292,7 +302,7 @@ Generating Entities ...
         string editableFile = className + ".cs";
         editableFile = Path.Combine(rootDirectory, editableFile);
 
-        if (!File.Exists(editableFile))
+        if (IncludeEditable && !File.Exists(editableFile))
         {
           editableClass.Entity = entity;
 
@@ -300,7 +310,11 @@ Generating Entities ...
           editableClass.RenderToFile(editableFile, true);
         }
 
-        string generatedFile = className + ".Generated.cs";
+        string generatedFile = className;
+        if (IncludeEditable) 
+            generatedFile += ".Generated";
+        
+        generatedFile += ".cs";
         generatedFile = Path.Combine(rootDirectory, generatedFile);
 
         generatedClass.Entity = entity;
@@ -345,7 +359,7 @@ Generating Entities ...
         string editableFile = className + ".cs";
         editableFile = Path.Combine(rootDirectory, editableFile);
 
-        if (!File.Exists(editableFile))
+        if (IncludeEditable && !File.Exists(editableFile))
         {
           editableClass.Entity = entity;
 
@@ -353,7 +367,11 @@ Generating Entities ...
           editableClass.RenderToFile(editableFile, true);
         }
 
-        string generatedFile = className + ".Generated.cs";
+        string generatedFile = className;
+        if (IncludeEditable) 
+            generatedFile += ".Generated";
+        
+        generatedFile += ".cs";
         generatedFile = Path.Combine(rootDirectory, generatedFile);
 
         generatedClass.Entity = entity;

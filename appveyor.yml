@@ -1,0 +1,18 @@
+version: 1.0.{build}
+os: Visual Studio 2017
+environment:
+  Major: 1
+  Minor: 0
+configuration: Release
+before_build:
+- .\bootstrap.cmd
+build:
+  project: master.proj
+  verbosity: minimal
+test: off
+artifacts:
+- path: '*.nupkg'
+- path: '*.zip'
+deploy:
+- provider: Environment
+  name: MyGet
