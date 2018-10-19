@@ -30,28 +30,49 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
 <%
 string safeName = EntityNamespace + "." + Entity.ClassName.ToSafeName();
 %>
 
 namespace <%= QueryNamespace %>
 {
+    /// <summary>
+    /// Queryable extension methods for <see cref="T:<%= safeName %>"/>.
+    /// </summary>
     public static partial class <%= Entity.ClassName.ToSafeName() %>Extensions
     {
 <% foreach(var method in Entity.Methods) { %>
 <% if (method.IsKey) { %>
 
         /// <summary>
-        /// Gets an instance by the primary key.
+        /// Gets an instance of <see cref="T:<%= safeName %>"/> by the primary key.
         /// </summary>
+        /// <param name="queryable">An <see cref="T:System.Linq.IQueryable`1"></see> to filter.</param>
+        /// <returns>An instance of <see cref="T:<%= safeName %>"/> or null if not found.</returns>
         public static <%= safeName %> <%= UniqueMethodPrefix %><%= MethodKeySuffix %>(this System.Linq.IQueryable<<%= safeName %>> queryable, <%= GetParameters(method) %>)
         {
-            var dbSet = queryable as Microsoft.EntityFrameworkCore.DbSet<<%= safeName %>>;
+            var dbSet = queryable as DbSet<<%= safeName %>>;
             if (dbSet != null)
                 return dbSet.Find(<%= GetParametersNames(method) %>);
 
             return queryable.FirstOrDefault(<%= GetLamba(method, 4) %>);
+        }
+
+        /// <summary>
+        /// Gets an instance of <see cref="T:<%= safeName %>"/> by the primary key asynchronously.
+        /// </summary>
+        /// <param name="queryable">An <see cref="T:System.Linq.IQueryable`1"></see> to filter.</param>
+        /// <returns>An instance of <see cref="T:<%= safeName %>"/> or null if not found.</returns>
+        public static Task<<%= safeName %>> <%= UniqueMethodPrefix %><%= MethodKeySuffix %>Async(this System.Linq.IQueryable<<%= safeName %>> queryable, <%= GetParameters(method) %>)
+        {
+            var dbSet = queryable as DbSet<<%= safeName %>>;
+            if (dbSet != null)
+                return dbSet.FindAsync(<%= GetParametersNames(method) %>);
+
+            return queryable.FirstOrDefaultAsync(<%= GetLamba(method, 4) %>);
         }
 <%
 } else if (method.IsUnique) {
@@ -61,12 +82,23 @@ namespace <%= QueryNamespace %>
 %>
 
         /// <summary>
-        /// Gets an instance by using a unique index.
+        /// Gets an instance of <see cref="T:<%= safeName %>"/> by using a unique index.
         /// </summary>
-        /// <returns>An instance of the entity or null if not found.</returns>
+        /// <param name="queryable">An <see cref="T:System.Linq.IQueryable`1"></see> to filter.</param>
+        /// <returns>An instance of <see cref="T:<%= safeName %>"/> or null if not found.</returns>
         public static <%= safeName %> <%= UniqueMethodPrefix %><%= suffix %>(this IQueryable<<%= safeName %>> queryable, <%= GetParameters(method) %>)
         {
             return queryable.FirstOrDefault(<%= GetLamba(method, 4) %>);
+        }
+
+        /// <summary>
+        /// Gets an instance of <see cref="T:<%= safeName %>"/> by using a unique index asynchronously.
+        /// </summary>
+        /// <param name="queryable">An <see cref="T:System.Linq.IQueryable`1"></see> to filter.</param>
+        /// <returns>An instance of <see cref="T:<%= safeName %>"/> or null if not found.</returns>
+        public static Task<<%= safeName %>> <%= UniqueMethodPrefix %><%= suffix %>Async(this IQueryable<<%= safeName %>> queryable, <%= GetParameters(method) %>)
+        {
+            return queryable.FirstOrDefaultAsync(<%= GetLamba(method, 4) %>);
         }
 <% } else {
         string suffix = method.NameSuffix;
@@ -74,6 +106,11 @@ namespace <%= QueryNamespace %>
             suffix += "Member";
 %>
 
+        /// <summary>
+        /// Filters a sequence of values based on a predicate.
+        /// </summary>
+        /// <param name="queryable">An <see cref="T:System.Linq.IQueryable`1"></see> to filter.</param>
+        /// <returns>An <see cref="T:System.Linq.IQueryable`1"></see> that contains elements from the input sequence that satisfy the condition specified.</returns>
         public static IQueryable<<%= safeName %>> <%= MethodPrefix %><%= suffix %>(this IQueryable<<%= safeName %>> queryable, <%= GetParameters(method) %>)
         {
             return queryable.Where(<%= GetLamba(method, 4) %>);

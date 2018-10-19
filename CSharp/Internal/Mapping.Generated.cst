@@ -99,6 +99,7 @@ public string PropertyExpression(Property property)
     sb.Append(property.ColumnName);
     sb.Append("\")");
 
+    /*
     if (!string.IsNullOrEmpty(property.NativeType))
     {
         sb.AppendLine();
@@ -107,6 +108,7 @@ public string PropertyExpression(Property property)
         sb.Append(property.NativeType);
         sb.Append("\")");
     }
+    */
 
     if (!isBlob && (isString || isByteArray) && (property.MaxLength > 0 && property.MaxLength < 8000))
     {
@@ -126,7 +128,7 @@ public string PropertyExpression(Property property)
         sb.Append("\")");
     }
 
-    if (property.IsIdentity == true)
+    if (property.IsIdentity == true || (property.IsPrimaryKey == true && property.SystemType == typeof(Guid)))
     {
       sb.AppendLine();
       sb.Append(' ', 4 * 4);

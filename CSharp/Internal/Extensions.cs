@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
+using CodeSmith.CustomProperties;
 using CodeSmith.Engine;
 
 namespace SchemaMapper
@@ -186,5 +188,47 @@ namespace SchemaMapper
             return sb.ToString();
         }
 
+
+        public static bool IsIgnored(this Property property, StringCollection expressions)
+        {
+            if (expressions == null || expressions.Count == 0)
+                return false;
+
+            var value = property.PropertyName;
+
+            foreach (var expression in expressions)
+                if (Regex.IsMatch(value, expression))
+                    return true;
+
+            return false;
+        }
+
+        public static bool IsIgnored(this Property property, Entity entity, StringCollection expressions)
+        {
+            if (expressions == null || expressions.Count == 0)
+                return false;
+
+            var value = entity.ClassName + "." + property.PropertyName;
+
+            foreach (var expression in expressions)
+                if (Regex.IsMatch(value, expression))
+                    return true;
+
+            return false;
+        }
+
+        public static bool IsIgnored(this Entity entity, StringCollection expressions)
+        {
+            if (expressions == null || expressions.Count == 0)
+                return false;
+
+            var value = entity.ClassName;
+
+            foreach (var expression in expressions)
+                if (Regex.IsMatch(value, expression))
+                    return true;
+
+            return false;
+        }
     }
 }
